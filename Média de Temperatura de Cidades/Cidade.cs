@@ -1,9 +1,12 @@
+using System.Text.Json.Serialization; // Necessário para os atributos
+
 namespace AppCidades
 {
     public class Cidade
     {
-        public int Id { get; set; }
+        [JsonPropertyName("cidade")] // Mapeia o nome diferente no JSON
         public string Nome { get; set; }
+
         public string Pais { get; set; }
         public string Continente { get; set; }
         public double Verao { get; set; }
