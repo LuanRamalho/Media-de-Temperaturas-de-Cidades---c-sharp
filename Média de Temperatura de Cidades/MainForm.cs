@@ -2,13 +2,13 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Linq;
-using System.Globalization; // Necessário para ignorar ponto/vírgula
+using System.Globalization;
 
 namespace AppCidades
 {
     public partial class MainForm : Form
     {
-        private int? idSelecionado = null;
+        private string nomeSelecionado = null; // Substituiu o idSelecionado
         private DataGridView grid;
         private TextBox txtCidade, txtPais, txtVerao, txtOutono, txtInverno, txtPrimavera, txtBusca;
         private ComboBox cbContinente;
@@ -23,13 +23,12 @@ namespace AppCidades
 
         private void ConfigurarInterface()
         {
-            this.Text = "Climatologia Mundial - Banco de Dados";
+            this.Text = "Climatologia Mundial - JSON NoSQL";
             this.Size = new Size(900, 650);
             this.BackColor = Color.AliceBlue;
 
             Panel pnlForm = new Panel { Dock = DockStyle.Top, Height = 220, Padding = new Padding(10) };
             
-            // Labels e Inputs
             Label lblCidade = new Label { Text = "Cidade:", Location = new Point(20, 20), AutoSize = true };
             txtCidade = new TextBox { Location = new Point(100, 20), Width = 150 };
 
@@ -40,7 +39,6 @@ namespace AppCidades
             cbContinente = new ComboBox { Location = new Point(100, 90), Width = 150, DropDownStyle = ComboBoxStyle.DropDownList };
             cbContinente.Items.AddRange(new string[] { "África", "América", "Ásia", "Europa", "Oceania" });
 
-            // Temperaturas
             Label lblV = new Label { Text = "Verão (°C):", Location = new Point(280, 20), AutoSize = true };
             txtVerao = new TextBox { Location = new Point(380, 20), Width = 60 };
             
@@ -53,7 +51,6 @@ namespace AppCidades
             Label lblP = new Label { Text = "Primavera (°C):", Location = new Point(280, 125), AutoSize = true };
             txtPrimavera = new TextBox { Location = new Point(380, 125), Width = 60 };
 
-            // Botões
             btnAdicionar = new Button { Text = "Adicionar", Location = new Point(20, 170), Width = 100, BackColor = Color.LightGreen, FlatStyle = FlatStyle.Flat };
             btnAdicionar.Click += (s, e) => AcaoSalvar();
 
@@ -87,11 +84,9 @@ namespace AppCidades
 
         private void AtualizarGrid(string busca = "")
         {
+            grid.DataSource = null;
             grid.DataSource = DatabaseHelper.Listar(busca);
             
-            if (grid.Columns["Id"] != null) grid.Columns["Id"].Visible = false;
-
-            // Formatação para 1 casa decimal em todas as colunas numéricas
             string[] colsNumericas = { "Verao", "Outono", "Inverno", "Primavera", "Media" };
             foreach (var col in colsNumericas)
             {
@@ -100,10 +95,8 @@ namespace AppCidades
             }
         }
 
-        // Função auxiliar para converter texto em número aceitando ponto ou vírgula
         private double ParseDouble(string texto)
         {
-            // Substitui vírgula por ponto para garantir consistência
             string limpo = texto.Replace(',', '.');
             return double.Parse(limpo, CultureInfo.InvariantCulture);
         }
@@ -118,17 +111,13 @@ namespace AppCidades
                     return;
                 }
 
-                // Lê e arredonda cada estação para 1 casa decimal
                 double v = Math.Round(ParseDouble(txtVerao.Text), 1);
                 double o = Math.Round(ParseDouble(txtOutono.Text), 1);
                 double i = Math.Round(ParseDouble(txtInverno.Text), 1);
                 double p = Math.Round(ParseDouble(txtPrimavera.Text), 1);
-                
-                // Média Geral também arredondada
                 double media = Math.Round((v + o + i + p) / 4.0, 1);
 
                 var cid = new Cidade {
-                    Id = idSelecionado ?? 0,
                     Nome = txtCidade.Text,
                     Pais = txtPais.Text,
                     Continente = cbContinente.Text,
@@ -136,7 +125,7 @@ namespace AppCidades
                     Media = media
                 };
 
-                DatabaseHelper.Salvar(cid);
+                DatabaseHelper.Salvar(cid, nomeSelecionado);
                 MessageBox.Show("Operação realizada com sucesso!");
                 LimparCampos();
                 AtualizarGrid();
@@ -156,7 +145,7 @@ namespace AppCidades
             if (grid.SelectedRows.Count > 0)
             {
                 var cid = (Cidade)grid.SelectedRows[0].DataBoundItem;
-                idSelecionado = cid.Id;
+                nomeSelecionado = cid.Nome;
                 txtCidade.Text = cid.Nome;
                 txtPais.Text = cid.Pais;
                 cbContinente.Text = cid.Continente;
@@ -178,7 +167,7 @@ namespace AppCidades
                 var res = MessageBox.Show($"Deseja excluir {cid.Nome}?", "Confirmar", MessageBoxButtons.YesNo);
                 if (res == DialogResult.Yes)
                 {
-                    DatabaseHelper.Excluir(cid.Id);
+                    DatabaseHelper.Excluir(cid.Nome);
                     AtualizarGrid();
                 }
             }
@@ -186,7 +175,7 @@ namespace AppCidades
 
         private void LimparCampos()
         {
-            idSelecionado = null;
+            nomeSelecionado = null;
             txtCidade.Clear();
             txtPais.Clear();
             txtVerao.Clear();
