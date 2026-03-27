@@ -1,0 +1,62 @@
+[
+  {
+    "cidade": "Sydney",
+    "Pais": "Austr\u00E1lia",
+    "Continente": "Oceania",
+    "Verao": 23.6,
+    "Outono": 18.6,
+    "Inverno": 12.6,
+    "Primavera": 17.6,
+    "Media": 18.1
+  },
+  {
+    "cidade": "Ottawa",
+    "Pais": "Canad\u00E1",
+    "Continente": "Am\u00E9rica",
+    "Verao": 20.6,
+    "Outono": 8.6,
+    "Inverno": -10.3,
+    "Primavera": 9.4,
+    "Media": 7.1
+  },
+  {
+    "cidade": "Oslo",
+    "Pais": "Noruega",
+    "Continente": "Europa",
+    "Verao": 20,
+    "Outono": 7.6,
+    "Inverno": -3.8,
+    "Primavera": 10,
+    "Media": 8.4
+  },
+  {
+    "cidade": "Florian\u00F3polis",
+    "Pais": "Brasil",
+    "Continente": "Am\u00E9rica",
+    "Verao": 24.4,
+    "Outono": 20.4,
+    "Inverno": 16,
+    "Primavera": 18.4,
+    "Media": 19.8
+  },
+  {
+    "cidade": "Moscou",
+    "Pais": "R\u00FAssia",
+    "Continente": "Europa",
+    "Verao": 18.4,
+    "Outono": 6.4,
+    "Inverno": -9.4,
+    "Primavera": 8.4,
+    "Media": 6
+  },
+  {
+    "cidade": "Rio de Janeiro",
+    "Pais": "Brasil",
+    "Continente": "Am\u00E9rica",
+    "Verao": 26.4,
+    "Outono": 23.6,
+    "Inverno": 19.4,
+    "Primavera": 22.4,
+    "Media": 23
+  }
+]
