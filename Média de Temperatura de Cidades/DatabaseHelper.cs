@@ -1,96 +1,69 @@
 using System;
 using System.Collections.Generic;
-using Microsoft.Data.Sqlite; // Mudou aqui
 using System.IO;
+using System.Linq;
+using System.Text.Json;
 
 namespace AppCidades
 {
     public static class DatabaseHelper
     {
-        private static string dbPath = "cidades.db";
-        private static string connectionString = $"Data Source={dbPath};"; // String simplificada
+        private static string dbPath = "cidades.json";
 
         public static void InicializarBanco()
         {
-            using (var conexao = new SqliteConnection(connectionString))
+            if (!File.Exists(dbPath))
             {
-                conexao.Open();
-                string sql = @"CREATE TABLE IF NOT EXISTS cidades (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    cidade TEXT, pais TEXT, continente TEXT,
-                    verao REAL, outono REAL, inverno REAL, primavera REAL, media REAL)";
-                using (var comando = new SqliteCommand(sql, conexao)) comando.ExecuteNonQuery();
-            }
-        }
-
-        public static void Salvar(Cidade c)
-        {
-            using (var conexao = new SqliteConnection(connectionString))
-            {
-                conexao.Open();
-                string sql = c.Id == 0 
-                    ? "INSERT INTO cidades (cidade, pais, continente, verao, outono, inverno, primavera, media) VALUES (@c, @p, @con, @v, @o, @i, @pri, @m)"
-                    : "UPDATE cidades SET cidade=@c, pais=@p, continente=@con, verao=@v, outono=@o, inverno=@i, primavera=@pri, media=@m WHERE id=@id";
-
-                using (var cmd = new SqliteCommand(sql, conexao))
-                {
-                    cmd.Parameters.AddWithValue("@c", c.Nome);
-                    cmd.Parameters.AddWithValue("@p", c.Pais);
-                    cmd.Parameters.AddWithValue("@con", c.Continente);
-                    cmd.Parameters.AddWithValue("@v", c.Verao);
-                    cmd.Parameters.AddWithValue("@o", c.Outono);
-                    cmd.Parameters.AddWithValue("@i", c.Inverno);
-                    cmd.Parameters.AddWithValue("@pri", c.Primavera);
-                    cmd.Parameters.AddWithValue("@m", c.Media);
-                    if (c.Id > 0) cmd.Parameters.AddWithValue("@id", c.Id);
-                    cmd.ExecuteNonQuery();
-                }
+                File.WriteAllText(dbPath, "[]");
             }
         }
 
         public static List<Cidade> Listar(string busca = "")
         {
-            var lista = new List<Cidade>();
-            using (var conexao = new SqliteConnection(connectionString))
-            {
-                conexao.Open();
-                string sql = "SELECT * FROM cidades WHERE cidade LIKE @b OR pais LIKE @b";
-                using (var cmd = new SqliteCommand(sql, conexao))
-                {
-                    cmd.Parameters.AddWithValue("@b", "%" + busca + "%");
-                    using (var rdr = cmd.ExecuteReader())
-                    {
-                        while (rdr.Read())
-                        {
-                            lista.Add(new Cidade {
-                                Id = rdr.GetInt32(0),
-                                Nome = rdr.GetString(1),
-                                Pais = rdr.GetString(2),
-                                Continente = rdr.GetString(3),
-                                Verao = rdr.GetDouble(4),
-                                Outono = rdr.GetDouble(5),
-                                Inverno = rdr.GetDouble(6),
-                                Primavera = rdr.GetDouble(7),
-                                Media = rdr.GetDouble(8)
-                            });
-                        }
-                    }
-                }
-            }
-            return lista;
+            if (!File.Exists(dbPath)) return new List<Cidade>();
+
+            string json = File.ReadAllText(dbPath);
+            
+            // Configuração para aceitar nomes minúsculos do JSON nas propriedades maiúsculas do C#
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            
+            var lista = JsonSerializer.Deserialize<List<Cidade>>(json, options) ?? new List<Cidade>();
+
+            if (string.IsNullOrWhiteSpace(busca)) return lista;
+
+            return lista.Where(c => 
+                c.Nome.Contains(busca, StringComparison.OrdinalIgnoreCase) || 
+                c.Pais.Contains(busca, StringComparison.OrdinalIgnoreCase)
+            ).ToList();
         }
 
-        public static void Excluir(int id)
+        public static void Salvar(Cidade novaCidade, string nomeOriginal = null)
         {
-            using (var conexao = new SqliteConnection(connectionString))
+            var lista = Listar();
+
+            if (!string.IsNullOrEmpty(nomeOriginal))
             {
-                conexao.Open();
-                using (var cmd = new SqliteCommand("DELETE FROM cidades WHERE id=@id", conexao))
-                {
-                    cmd.Parameters.AddWithValue("@id", id);
-                    cmd.ExecuteNonQuery();
-                }
+                // Modo Edição: Remove a versão antiga e adiciona a nova
+                lista.RemoveAll(c => c.Nome.Equals(nomeOriginal, StringComparison.OrdinalIgnoreCase));
             }
+            else
+            {
+                // Evita duplicados no "Adicionar" se já existir o mesmo nome
+                lista.RemoveAll(c => c.Nome.Equals(novaCidade.Nome, StringComparison.OrdinalIgnoreCase));
+            }
+
+            lista.Add(novaCidade);
+            string json = JsonSerializer.Serialize(lista, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(dbPath, json);
+        }
+
+        public static void Excluir(string nome)
+        {
+            var lista = Listar();
+            lista.RemoveAll(c => c.Nome.Equals(nome, StringComparison.OrdinalIgnoreCase));
+            
+            string json = JsonSerializer.Serialize(lista, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(dbPath, json);
         }
     }
 }
